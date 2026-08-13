@@ -1,0 +1,2559 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Abasto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #100e0a;
+    --panel: #1a1712;
+    --panel-2: #211c15;
+    --border: #362c1e;
+    --text: #ede6d8;
+    --muted: #9c9080;
+    --brass: #c08a3e;
+    --brass-dim: #8a6530;
+    --emerald: #3c8562;
+    --red: #c1443f;
+    --red-bg: rgba(193, 68, 63, 0.15);
+    --yellow: #d97706;
+    --yellow-bg: rgba(217, 119, 6, 0.15);
+    --receipt-bg: #16130e;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+  ::selection{ background: var(--brass); color: #100e0a; }
+
+  /* ---------- Header ---------- */
+  header.top{
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 22px 20px;
+  }
+  .top-inner{
+    max-width: 1000px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .brand{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-mark{
+    width: 42px; height: 42px;
+    border: 1.5px solid var(--brass);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    color: var(--brass);
+    font-size: 16px;
+    overflow: hidden;
+    background: var(--panel-2);
+    flex-shrink: 0;
+  }
+  .brand-mark img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  #store-name-display{
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 0.3px;
+  }
+  .rate-pill{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 20px;
+    color: var(--muted);
+  }
+  .rate-pill strong{ color: var(--brass); }
+
+  /* ---------- Tabs ---------- */
+  nav.tabs{
+    max-width: 1000px;
+    margin: 20px auto 0;
+    padding: 0 20px;
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn{
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 12px 18px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+  }
+  .tab-btn.active{
+    color: var(--brass);
+    border-bottom-color: var(--brass);
+  }
+  .tab-btn:hover{ color: var(--text); }
+
+  main{
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px 20px;
+  }
+  .view{ display: none; flex-direction: column; gap: 20px; }
+  .view.active{ display: flex; }
+
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+  }
+  .card h2{
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+  .card p.hint{
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  /* ---------- Acordeón / Desplegables ---------- */
+  .collapsible-card {
+    padding: 0;
+    overflow: hidden;
+  }
+  .collapsible-trigger {
+    width: 100%;
+    background: var(--panel);
+    border: none;
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text);
+    transition: background .15s;
+  }
+  .collapsible-trigger:hover {
+    background: var(--panel-2);
+  }
+  .collapsible-title-wrap h2 {
+    margin-bottom: 2px;
+  }
+  .collapsible-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 12px;
+    color: var(--brass);
+  }
+  .arrow-icon {
+    font-size: 14px;
+    color: var(--muted);
+    transition: transform .2s ease;
+  }
+  .collapsible-card.open .arrow-icon {
+    transform: rotate(180deg);
+  }
+  .collapsible-body {
+    display: none;
+    padding: 0 22px 22px 22px;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+  }
+  .collapsible-card.open .collapsible-body {
+    display: block;
+  }
+
+  .grid-2{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .grid-4{ display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 768px){
+    .grid-2, .grid-3, .grid-4{ grid-template-columns: 1fr; }
+  }
+
+  label{
+    display:block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  input[type="text"], input[type="number"], input[type="password"], input[type="time"], select{
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+  input:focus, select:focus{ outline: none; border-color: var(--brass); }
+  select{ cursor: pointer; }
+
+  .btn{
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 11px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+  }
+  .btn:active{ transform: scale(0.97); }
+  .btn:disabled{ opacity: 0.35; cursor: not-allowed; }
+  .btn-brass{ background: var(--brass); color: #17130c; }
+  .btn-brass:hover:not(:disabled){ opacity: 0.9; }
+  .btn-emerald{ background: var(--emerald); color: #0d1a14; }
+  .btn-emerald:hover:not(:disabled){ opacity: 0.9; }
+  .btn-red{ background: var(--red); color: #ffffff; }
+  .btn-red:hover:not(:disabled){ opacity: 0.9; }
+  .btn-outline{ background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover:not(:disabled){ border-color: var(--brass); }
+  .btn-row{ display:flex; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+
+  /* Style contenedor logo preview */
+  .logo-preview-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    background: var(--panel-2);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .logo-preview-box {
+    width: 60px;
+    height: 60px;
+    border: 1px dashed var(--brass);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .logo-preview-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  video{
+    width: 100%;
+    max-height: 320px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #000;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .status-line{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    min-height: 16px;
+  }
+  .status-line.error{ color: var(--red); }
+  .status-line.ok{ color: var(--emerald); }
+
+  .pct-control{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pct-btn{
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink: 0;
+  }
+  .pct-btn:hover{ border-color: var(--brass); color: var(--brass); }
+  .pct-btn.minus:hover{ border-color: var(--red); color: var(--red); }
+
+  /* ---------- Búsqueda y Resultados ---------- */
+  .search-results-box {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    max-height: 180px;
+    overflow-y: auto;
+    margin-top: -10px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .search-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+  }
+  .search-item:last-child { border-bottom: none; }
+  .search-item:hover { background: var(--border); }
+  .search-item-info { display: flex; flex-direction: column; }
+  .search-item-name { font-weight: 600; color: var(--text); }
+  .search-item-code { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
+  .search-item-price { font-family: 'JetBrains Mono', monospace; color: var(--brass); font-weight: 700; }
+
+  /* ---------- Tabla de inventario / Registro ---------- */
+  table.stock-table{
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.stock-table th{
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    padding: 8px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  table.stock-table td{
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  table.stock-table tr:last-child td{ border-bottom: none; }
+  
+  /* ESTILOS DE RESALTADO SEGÚN NIVELES DE STOCK */
+  table.stock-table tr.row-out-of-stock {
+    background-color: var(--red-bg);
+  }
+  table.stock-table tr.row-low-stock {
+    background-color: var(--yellow-bg);
+  }
+
+  .prod-name{ font-weight: 600; }
+  .prod-barcode{ color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .qty-cell{ display:flex; align-items:center; gap:8px; }
+  .qty-value{ font-family: 'JetBrains Mono', monospace; font-weight: 700; min-width: 24px; text-align:center; }
+  .qty-value.out{ color: var(--red); font-weight: bold; }
+  .qty-value.low{ color: var(--yellow); font-weight: bold; }
+  
+  .badge-stock {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 2px;
+  }
+  .badge-stock.out { background: var(--red); color: #fff; }
+  .badge-stock.low { background: var(--yellow); color: #fff; }
+
+  .price-usd{ font-family: 'JetBrains Mono', monospace; color: var(--text); }
+  .price-bs{ font-family: 'JetBrains Mono', monospace; color: var(--muted); font-size: 11px; }
+  .del-btn{
+    background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px;
+  }
+  .del-btn:hover{ color: var(--red); }
+  .empty-msg{ color: var(--muted); font-size: 13px; text-align: center; padding: 20px 0; }
+
+  /* ---------- Recibo / carrito POS ---------- */
+  .receipt{
+    background: var(--receipt-bg);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 18px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+  .receipt-header{
+    text-align: center;
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+  }
+  .receipt-brand-inline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .receipt-logo {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--brass);
+  }
+  .receipt-header .store{
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--brass);
+  }
+  .receipt-header .date{ color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .receipt-client-info {
+    font-size: 11px;
+    color: var(--text);
+    margin-top: 6px;
+    text-align: left;
+    background: var(--panel-2);
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px dotted var(--border);
+  }
+  .receipt-line{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px dotted var(--border);
+  }
+  .receipt-line:last-child{ border-bottom: none; }
+  .rl-name{ flex: 1; }
+  .rl-qty{ display:flex; align-items:center; gap:6px; }
+  .rl-subtotal{ min-width: 70px; text-align: right; }
+  .receipt-totals{
+    border-top: 1px dashed var(--border);
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+  .rt-row{ display:flex; justify-content: space-between; padding: 4px 0; }
+  .rt-row.grand{ font-size: 17px; font-weight: 700; color: var(--brass); padding-top: 8px; }
+  .cart-empty{ color: var(--muted); text-align: center; padding: 16px 0; font-size: 13px; }
+
+  /* ---------- Registro de Ventas ---------- */
+  .sale-card-item {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .sale-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .sale-id { color: var(--brass); font-weight: 700; }
+  .sale-time { color: var(--muted); }
+  .sale-client-badge {
+    font-size: 11px;
+    color: var(--text);
+    margin-bottom: 10px;
+    background: var(--panel);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  .sale-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px dotted var(--border);
+    font-size: 13px;
+  }
+  .sale-item-row:last-child { border-bottom: none; }
+  .sale-item-info { flex: 1; }
+  .sale-item-controls { display: flex; align-items: center; gap: 8px; }
+  .sale-summary-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .sale-summary-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .badge-void {
+    background: var(--red);
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .badge-rectified {
+    background: var(--brass-dim);
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .btn-void-sale {
+    background: transparent;
+    border: 1px solid var(--red);
+    color: var(--red);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .btn-void-sale:hover {
+    background: var(--red);
+    color: #ffffff;
+  }
+
+  /* ---------- Devoluciones / Productos Quitados ---------- */
+  .returns-card-item {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--red);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .returns-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--muted);
+    border-bottom: 1px dotted var(--border);
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+  }
+
+  .toggle-row{ display:flex; align-items:center; gap: 10px; font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  .switch{ position: relative; width: 40px; height: 22px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 20px; cursor: pointer; flex-shrink:0; }
+  .switch .knob{ position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: var(--muted); border-radius: 50%; transition: left .15s, background .15s; }
+  .switch.on{ border-color: var(--brass); }
+  .switch.on .knob{ left: 20px; background: var(--brass); }
+
+  .section-title{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 4px 0 10px;
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <div class="brand-mark" id="brand-mark-display">A</div>
+      <div id="store-name-display">Mi Abasto</div>
+    </div>
+    <div class="rate-pill">Tasa BCV: <strong id="rate-display">—</strong> Bs/$</div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-view="config">Configuración</button>
+  <button class="tab-btn" data-view="inventory">Inventario</button>
+  <button class="tab-btn" data-view="pos">Punto de Venta</button>
+</nav>
+
+<main>
+
+  <!-- ================= CONFIGURACIÓN ================= -->
+  <section class="view active" id="view-config">
+
+    <div class="card">
+      <h2>Datos del negocio</h2>
+      <p class="hint">El nombre y logo aparecen en el encabezado, recibos y reportes PDF.</p>
+      
+      <label for="cfg-store-name">Nombre del abasto / bodega</label>
+      <input type="text" id="cfg-store-name" placeholder="Ej: Abasto El Buen Precio">
+
+      <label>Logo / Imagen de la Bodega</label>
+      <div class="logo-preview-container">
+        <div class="logo-preview-box" id="logo-preview-box">
+          <span style="font-size:10px; color:var(--muted);">Sin Logo</span>
+        </div>
+        <div style="flex:1;">
+          <label class="btn btn-outline" style="display:inline-block; margin-bottom:6px; cursor:pointer;">
+            📷 Seleccionar Imagen
+            <input type="file" id="cfg-logo-input" accept="image/*" style="display:none;">
+          </label>
+          <button class="btn btn-red" id="remove-logo-btn" style="padding: 11px 12px; display:none;">✕ Quitar Logo</button>
+          <p style="font-size:11px; color:var(--muted); margin-top:2px;">Formatos soportados: PNG, JPG, WEBP.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label for="cfg-default-margin">% de ganancia por defecto</label>
+          <input type="number" id="cfg-default-margin" placeholder="Ej: 30" step="0.1">
+        </div>
+        <div>
+          <label for="cfg-low-stock">Umbral de stock bajo (unidades)</label>
+          <input type="number" id="cfg-low-stock" placeholder="Ej: 5" step="1">
+        </div>
+      </div>
+      <button class="btn btn-brass" id="save-config">Guardar configuración</button>
+      <div class="status-line" id="config-status"></div>
+    </div>
+
+    <!-- RESPALDO Y RESTAURACIÓN EN LA NUBE / DISPOSITIVO -->
+    <div class="card">
+      <h2>Respaldo y Restauración de Emergencia</h2>
+      <p class="hint">Guarda toda la información de la App en Telegram para recuperarla inmediatamente si cambias o pierdes tu teléfono.</p>
+      
+      <div class="toggle-row" style="margin-bottom: 14px;">
+        <div class="switch" id="auto-backup-toggle"><div class="knob"></div></div>
+        <span>Activar Respaldo Automático Programado por Horario</span>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label for="cfg-time-open">Hora de Entrada / Apertura</label>
+          <input type="time" id="cfg-time-open">
+        </div>
+        <div>
+          <label for="cfg-time-close">Hora de Salida / Cierre (Envío de JSON a Telegram)</label>
+          <input type="time" id="cfg-time-close">
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-brass" id="export-backup-btn">📦 Enviar Respaldo a Telegram</button>
+        <button class="btn btn-outline" id="download-backup-btn">💾 Descargar Archivo JSON</button>
+        <label class="btn btn-emerald" style="margin-bottom:0; cursor:pointer;">
+          📥 Cargar Archivo de Respaldo
+          <input type="file" id="import-file-input" accept=".json" style="display:none;">
+        </label>
+      </div>
+      <div class="status-line" id="backup-status"></div>
+    </div>
+
+    <!-- REPORTE DE FACTURACIÓN Y AUDITORÍA EN PDF -->
+    <div class="card">
+      <h2>Reporte General de Facturación y Stock (PDF)</h2>
+      <p class="hint">Descarga un documento consolidado que incluye el logo, registro general de ventas, rectificaciones, devoluciones, ganancias netas y el estado actual del inventario con sobreavisos de color.</p>
+      <div class="btn-row">
+        <button class="btn btn-emerald" id="download-pdf-btn">📄 Descargar Factura/Reporte PDF</button>
+      </div>
+      <div class="status-line" id="pdf-status"></div>
+    </div>
+
+    <div class="card">
+      <h2>Tasa del Banco Central de Venezuela</h2>
+      <p class="hint">
+        El BCV no ofrece una API pública propia para el navegador, así que esta tasa se
+        obtiene de una API intermediaria. Puedes dejar la que viene por defecto o poner
+        cualquier otra URL que tú prefieras.
+      </p>
+      <label for="cfg-rate-url">URL de la API de tasa (debe responder JSON)</label>
+      <input type="text" id="cfg-rate-url" placeholder="https://...">
+
+      <div class="grid-2">
+        <div>
+          <label for="cfg-rate-manual">Tasa manual (si prefieres no usar API)</label>
+          <input type="number" id="cfg-rate-manual" placeholder="Ej: 65.30" step="0.01">
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <div class="toggle-row" style="margin-top:6px;">
+            <div class="switch" id="auto-update-toggle"><div class="knob"></div></div>
+            <span>Actualizar automáticamente cada día</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-outline" id="fetch-rate-btn">Actualizar tasa ahora</button>
+        <button class="btn btn-brass" id="save-rate-config">Guardar</button>
+      </div>
+      <div class="status-line" id="rate-status"></div>
+    </div>
+
+    <div class="card">
+      <h2>Notificaciones y Comandos de Telegram</h2>
+      <p class="hint">
+        Comandos disponibles en el bot:
+        <br>• <code>/backup</code> o <code>/respaldo</code> : Te envía el archivo de copia de seguridad con todo tu inventario y ventas.
+        <br>• <code>/restore</code> o <code>/restaurar</code> : Te permite subir o cargar los datos recuperados a un nuevo dispositivo.
+        <br>• <code>/factura</code> o <code>/reporte</code> : Genera y envía el PDF consolidado.
+      </p>
+      <label for="cfg-tg-token">Token del bot de Telegram</label>
+      <input type="text" id="cfg-tg-token" placeholder="123456789:AA...">
+      <label for="cfg-tg-chat">Chat ID</label>
+      <input type="text" id="cfg-tg-chat" placeholder="987654321">
+      <div class="toggle-row">
+        <div class="switch" id="tg-enabled-toggle"><div class="knob"></div></div>
+        <span>Notificaciones de Telegram activas</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-outline" id="test-telegram-btn">Enviar mensaje de prueba</button>
+        <button class="btn btn-brass" id="save-tg-config">Guardar</button>
+      </div>
+      <div class="status-line" id="tg-status"></div>
+    </div>
+
+  </section>
+
+  <!-- ================= INVENTARIO ================= -->
+  <section class="view" id="view-inventory">
+
+    <div class="card">
+      <h2>Agregar producto al stock</h2>
+      <p class="hint">Escanea el código de barras o escríbelo manualmente e ingresa los detalles del producto.</p>
+
+      <div class="grid-2">
+        <div>
+          <div class="section-title">Código de barras</div>
+          <video id="barcode-video" style="display:none;"></video>
+          <div class="btn-row">
+            <button class="btn btn-outline" id="scan-barcode-btn">📷 Escanear código de barras</button>
+            <button class="btn btn-outline" id="stop-barcode-btn" style="display:none;">Detener</button>
+          </div>
+          <input type="text" id="new-barcode" placeholder="Escríbelo o escanéalo">
+        </div>
+
+        <div>
+          <div class="section-title">Nombre del producto</div>
+          <label for="new-name" style="margin-top: 10px;">Descripción o nombre</label>
+          <input type="text" id="new-name" placeholder="Ej: Harina PAN 1kg">
+        </div>
+      </div>
+
+      <div class="status-line" id="scan-status"></div>
+
+      <!-- PRECIO DE COSTO EN USD Y BS -->
+      <div class="grid-2" style="margin-top:14px;">
+        <div>
+          <label for="new-cost-usd">Precio de Costo (USD)</label>
+          <input type="number" id="new-cost-usd" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div>
+          <label for="new-cost-bs">Precio de Costo (Bs)</label>
+          <input type="number" id="new-cost-bs" placeholder="0.00" step="0.01" min="0">
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div>
+          <label for="new-qty">Cantidad</label>
+          <input type="number" id="new-qty" placeholder="0" step="1" min="0">
+        </div>
+        <div>
+          <label for="pricing-mode">Cálculo de Precio</label>
+          <select id="pricing-mode">
+            <option value="margin">Por % de Ganancia</option>
+            <option value="direct">Precio Solamente (USD Directo)</option>
+          </select>
+        </div>
+        <div id="container-margin">
+          <label for="new-margin">% de ganancia</label>
+          <input type="number" id="new-margin" placeholder="30" step="0.1">
+        </div>
+        <div id="container-direct-price" style="display:none;">
+          <label for="new-direct-price">Precio de Venta (USD)</label>
+          <input type="number" id="new-direct-price" placeholder="0.00" step="0.01" min="0">
+        </div>
+      </div>
+
+      <div class="status-line" id="price-preview">Precio de venta: —</div>
+
+      <button class="btn btn-brass" id="add-product-btn" style="margin-top:14px;">Agregar al stock</button>
+      <div class="status-line" id="add-status"></div>
+    </div>
+
+    <div class="card">
+      <h2>Stock actual</h2>
+      <p class="hint">Los productos en <strong>rojo</strong> están agotados (0 unid.) y en <strong>amarillo</strong> están en el umbral de stock bajo.</p>
+
+      <label for="inventory-search">Buscar en inventario</label>
+      <input type="text" id="inventory-search" placeholder="Escribe para buscar por nombre o código de barras...">
+
+      <div id="stock-table-wrap">
+        <div class="empty-msg">Aún no hay productos en el stock.</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ================= PUNTO DE VENTA ================= -->
+  <section class="view" id="view-pos">
+
+    <div class="card">
+      <h2>Escanear o buscar producto para vender</h2>
+      <video id="pos-video" style="display:none;"></video>
+      <div class="btn-row">
+        <button class="btn btn-outline" id="scan-pos-btn">📷 Escanear código de barras</button>
+        <button class="btn btn-outline" id="stop-pos-btn" style="display:none;">Detener</button>
+      </div>
+
+      <label for="pos-manual-input">Código de barras o nombre del producto</label>
+      <input type="text" id="pos-manual-input" placeholder="Escribe el nombre o código y presiona Enter..." autocomplete="off">
+      <div id="pos-search-results" class="search-results-box"></div>
+
+      <div class="status-line" id="pos-status"></div>
+    </div>
+
+    <div class="card">
+      <h2>Venta actual y Datos del Cliente</h2>
+      <p class="hint">Ingresa la cédula o ID y nombre del cliente para vincular la venta a su expediente.</p>
+
+      <div class="grid-2">
+        <div>
+          <label for="client-doc">Cédula / RIF / ID del Cliente</label>
+          <input type="text" id="client-doc" placeholder="Ej: V-12345678">
+        </div>
+        <div>
+          <label for="client-name">Nombre Completo del Cliente</label>
+          <input type="text" id="client-name" placeholder="Ej: Juan Pérez">
+        </div>
+      </div>
+
+      <div class="receipt" id="receipt">
+        <div class="receipt-header">
+          <div class="receipt-brand-inline">
+            <span id="receipt-logo-container"></span>
+            <div class="store" id="receipt-store-name">Mi Abasto</div>
+          </div>
+          <div class="date" id="receipt-date">—</div>
+          <div class="receipt-client-info" id="receipt-client-display">
+            Cliente: General / Sin Identificación
+          </div>
+        </div>
+        <div id="receipt-lines">
+          <div class="cart-empty">Aún no has escaneado ni agregado productos.</div>
+        </div>
+        <div class="receipt-totals">
+          <div class="rt-row"><span>Total (USD)</span><span id="total-usd">$0.00</span></div>
+          <div class="rt-row"><span>Total (Bs)</span><span id="total-bs">Bs 0,00</span></div>
+          <div class="rt-row grand"><span>A pagar</span><span id="total-grand">$0.00</span></div>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn btn-emerald" id="finish-sale-btn" disabled>Finalizar venta</button>
+        <button class="btn btn-outline" id="cancel-sale-btn" disabled>Cancelar venta</button>
+      </div>
+      <div class="status-line" id="sale-status"></div>
+    </div>
+
+    <!-- REGISTRO DE VENTAS DEL DÍA (DESPLEGABLE) -->
+    <div class="card collapsible-card" id="sales-collapsible">
+      <button type="button" class="collapsible-trigger" onclick="toggleCollapsible('sales-collapsible')">
+        <div class="collapsible-title-wrap">
+          <h2>Registro de Ventas del Día</h2>
+          <span style="font-size:12px; color:var(--muted);">Historial de comprobantes y ventas procesadas hoy</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="collapsible-badge" id="sales-count-badge">0 Ventas</span>
+          <span class="arrow-icon">▼</span>
+        </div>
+      </button>
+      
+      <div class="collapsible-body">
+        <p class="hint" style="margin-top:14px;">Escribe la cédula, nombre del cliente o N° de factura para filtrar rápidamente sus comprobantes.</p>
+        
+        <label for="sales-search">Buscar Venta / Cliente</label>
+        <input type="text" id="sales-search" placeholder="Ingresa Cédula/ID, Nombre del Cliente o N° Factura (Ej: V-12345678)...">
+
+        <div id="daily-sales-list">
+          <div class="empty-msg">No se han registrado ventas el día de hoy.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REGISTRO DE DEVOLUCIONES / PRODUCTOS QUITADOS (DESPLEGABLE) -->
+    <div class="card collapsible-card" id="returns-collapsible">
+      <button type="button" class="collapsible-trigger" onclick="toggleCollapsible('returns-collapsible')">
+        <div class="collapsible-title-wrap">
+          <h2>Registro de Devoluciones / Productos Quitados</h2>
+          <span style="font-size:12px; color:var(--muted);">Auditoría de devoluciones y rectificaciones activas</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="collapsible-badge" id="returns-count-badge">0 Devoluciones</span>
+          <span class="arrow-icon">▼</span>
+        </div>
+      </button>
+
+      <div class="collapsible-body">
+        <p class="hint" style="margin-top:14px;">Filtra devoluciones por la cédula del cliente, nombre o ID de factura para agilizar reclamos.</p>
+        
+        <label for="returns-search">Buscar Devolución / Cliente</label>
+        <input type="text" id="returns-search" placeholder="Buscar por Cédula/ID, Cliente, Producto o N° Factura...">
+
+        <div id="daily-returns-list">
+          <div class="empty-msg">No hay devoluciones o rectificaciones registradas hoy.</div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+<script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script>
+/* =========================================================================
+   ESTADO Y PERSISTENCIA (localStorage)
+   ========================================================================= */
+const DEFAULT_RATE_API = "https://ve.dolarapi.com/v1/dolares/oficial";
+
+const state = {
+  config: JSON.parse(localStorage.getItem("abasto_config") || "{}"),
+  products: JSON.parse(localStorage.getItem("abasto_products") || "[]"),
+  sales: JSON.parse(localStorage.getItem("abasto_sales") || "[]"),
+  returns: JSON.parse(localStorage.getItem("abasto_returns") || "[]"),
+  cart: []
+};
+
+let lastAutoBackupDate = localStorage.getItem("abasto_last_autobackup") || "";
+
+function ensureConfigDefaults() {
+  const c = state.config;
+  if (c.storeName === undefined) c.storeName = "Mi Abasto";
+  if (c.storeLogo === undefined) c.storeLogo = null;
+  if (c.defaultMargin === undefined) c.defaultMargin = 30;
+  if (c.lowStockThreshold === undefined) c.lowStockThreshold = 5;
+  if (c.rateApiUrl === undefined) c.rateApiUrl = DEFAULT_RATE_API;
+  if (c.manualRate === undefined) c.manualRate = null;
+  if (c.currentRate === undefined) c.currentRate = null;
+  if (c.rateLastUpdated === undefined) c.rateLastUpdated = null;
+  if (c.autoUpdateRate === undefined) c.autoUpdateRate = true;
+  if (c.tgToken === undefined) c.tgToken = "";
+  if (c.tgChat === undefined) c.tgChat = "";
+  if (c.tgEnabled === undefined) c.tgEnabled = true;
+  if (c.autoBackupEnabled === undefined) c.autoBackupEnabled = false;
+  if (c.timeOpen === undefined) c.timeOpen = "08:00";
+  if (c.timeClose === undefined) c.timeClose = "18:00";
+}
+ensureConfigDefaults();
+
+function saveProducts() {
+  localStorage.setItem("abasto_products", JSON.stringify(state.products));
+}
+function saveConfig() {
+  localStorage.setItem("abasto_config", JSON.stringify(state.config));
+}
+function saveSales() {
+  localStorage.setItem("abasto_sales", JSON.stringify(state.sales));
+}
+function saveReturns() {
+  localStorage.setItem("abasto_returns", JSON.stringify(state.returns));
+}
+
+function toggleCollapsible(cardId) {
+  const card = document.getElementById(cardId);
+  if (card) {
+    card.classList.toggle("open");
+  }
+}
+
+/* =========================================================================
+   SISTEMA DE RESPALDO Y RESTAURACIÓN (BACKUP / RESTORE)
+   ========================================================================= */
+function generateBackupPayload() {
+  return {
+    version: "1.0",
+    timestamp: new Date().toISOString(),
+    config: state.config,
+    products: state.products,
+    sales: state.sales,
+    returns: state.returns
+  };
+}
+
+function restoreDataFromPayload(payload) {
+  if (!payload || !payload.products || !payload.config) {
+    throw new Error("El archivo de respaldo no tiene una estructura válida.");
+  }
+  state.config = payload.config;
+  state.products = payload.products;
+  state.sales = payload.sales || [];
+  state.returns = payload.returns || [];
+
+  saveConfig();
+  saveProducts();
+  saveSales();
+  saveReturns();
+
+  loadConfigIntoUI();
+  renderStockTable();
+  renderCart();
+  renderDailySales();
+  renderDailyReturns();
+}
+
+async function sendBackupToTelegram(chatIdOverride) {
+  const c = state.config;
+  const targetChatId = chatIdOverride || c.tgChat;
+  if (!c.tgToken || !targetChatId) return false;
+
+  const payload = generateBackupPayload();
+  const jsonStr = JSON.stringify(payload, null, 2);
+  const blob = new Blob([jsonStr], { type: "application/json" });
+
+  const formData = new FormData();
+  formData.append("chat_id", targetChatId);
+  formData.append("caption", `💾 *RESPALDO DE SEGURIDAD AUTOMÁTICO DE CIERRE*\nAbasto: ${c.storeName}\nFecha: ${new Date().toLocaleString('es-VE')}\n\nEste respaldo se generó automáticamente a la hora de salida configurada.`);
+  formData.append("document", blob, `Backup_Abasto_${Date.now()}.json`);
+
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${c.tgToken}/sendDocument`, {
+      method: "POST",
+      body: formData
+    });
+    return res.ok;
+  } catch (e) {
+    console.error("Error enviando respaldo a Telegram:", e);
+    return false;
+  }
+}
+
+/* ---------- VERIFICADOR AUTOMÁTICO DE CIERRE Y RESPALDO ---------- */
+async function checkScheduledAutoBackup() {
+  const c = state.config;
+  if (!c.autoBackupEnabled || !c.timeClose) return;
+
+  const now = new Date();
+  const currentHHMM = now.toTimeString().slice(0, 5);
+  const todayStr = now.toDateString();
+
+  if (currentHHMM === c.timeClose && lastAutoBackupDate !== todayStr) {
+    lastAutoBackupDate = todayStr;
+    localStorage.setItem("abasto_last_autobackup", todayStr);
+
+    const status = document.getElementById("backup-status");
+    if (status) {
+      status.textContent = "Ejecutando respaldo automático de hora de cierre...";
+      status.className = "status-line";
+    }
+
+    const success = await sendBackupToTelegram();
+    if (status) {
+      if (success) {
+        status.textContent = `¡Respaldo automático de cierre (${c.timeClose}) enviado a Telegram!`;
+        status.className = "status-line ok";
+      } else {
+        status.textContent = "Error al enviar respaldo automático de cierre a Telegram.";
+        status.className = "status-line error";
+      }
+    }
+  }
+}
+
+setInterval(checkScheduledAutoBackup, 20000);
+
+document.getElementById("export-backup-btn").addEventListener("click", async () => {
+  const status = document.getElementById("backup-status");
+  status.textContent = "Generando y enviando respaldo a Telegram...";
+  status.className = "status-line";
+
+  const success = await sendBackupToTelegram();
+  if (success) {
+    status.textContent = "¡Respaldo enviado con éxito a Telegram!";
+    status.className = "status-line ok";
+  } else {
+    status.textContent = "Error al enviar a Telegram. Verifica la configuración del bot.";
+    status.className = "status-line error";
+  }
+});
+
+document.getElementById("download-backup-btn").addEventListener("click", () => {
+  const payload = generateBackupPayload();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `Backup_Abasto_${Date.now()}.json`;
+  a.click();
+});
+
+document.getElementById("import-file-input").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    try {
+      const payload = JSON.parse(evt.target.result);
+      restoreDataFromPayload(payload);
+      const status = document.getElementById("backup-status");
+      status.textContent = "¡Información restaurada con éxito en este dispositivo!";
+      status.className = "status-line ok";
+      alert("Se han restaurado correctamente todos los productos, ventas y configuraciones.");
+    } catch (err) {
+      alert("Error al leer el archivo de respaldo: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+});
+
+/* =========================================================================
+   NAVEGACIÓN ENTRE PESTAÑAS
+   ========================================================================= */
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("view-" + btn.dataset.view).classList.add("active");
+    stopAllScanners();
+  });
+});
+
+/* =========================================================================
+   TELEGRAM NOTIFICACIONES & POLLING DE COMANDOS
+   ========================================================================= */
+let lastUpdateId = 0;
+let isPollingTelegram = false;
+
+async function notifyTelegram(message) {
+  const c = state.config;
+  if (!c.tgEnabled || !c.tgToken || !c.tgChat) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${c.tgToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: c.tgChat, text: message, parse_mode: "Markdown" })
+    });
+  } catch (e) {
+    console.warn("No se pudo enviar notificación a Telegram:", e);
+  }
+}
+
+async function sendPdfToTelegram(doc, chatIdOverride) {
+  const c = state.config;
+  const targetChatId = chatIdOverride || c.tgChat;
+  if (!c.tgToken || !targetChatId) return false;
+
+  const pdfBlob = doc.output('blob');
+  const formData = new FormData();
+  formData.append('chat_id', targetChatId);
+  formData.append('caption', `📊 Reporte consolidado de facturación y stock - ${c.storeName}`);
+  formData.append('document', pdfBlob, `Reporte_Facturacion_${Date.now()}.pdf`);
+
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${c.tgToken}/sendDocument`, {
+      method: 'POST',
+      body: formData
+    });
+    return res.ok;
+  } catch (e) {
+    console.error("Error al enviar PDF a Telegram:", e);
+    return false;
+  }
+}
+
+async function checkTelegramCommands() {
+  const c = state.config;
+  if (!c.tgEnabled || !c.tgToken || isPollingTelegram) return;
+
+  isPollingTelegram = true;
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${c.tgToken}/getUpdates?offset=${lastUpdateId + 1}&timeout=0`);
+    if (!res.ok) {
+      isPollingTelegram = false;
+      return;
+    }
+    const data = await res.json();
+
+    if (data.ok && data.result.length > 0) {
+      for (const update of data.result) {
+        lastUpdateId = update.update_id;
+        if (update.message && update.message.text) {
+          const text = update.message.text.trim().toLowerCase();
+          const chatId = update.message.chat.id;
+
+          if (text === '/backup' || text === '/respaldo') {
+            await fetch(`https://api.telegram.org/bot${c.tgToken}/sendMessage`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ chat_id: chatId, text: "📦 Generando y enviando respaldo completo de tu negocio..." })
+            });
+            await sendBackupToTelegram(chatId);
+          } else if (text === '/restore' || text === '/restaurar') {
+            await fetch(`https://api.telegram.org/bot${c.tgToken}/sendMessage`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ 
+                chat_id: chatId, 
+                text: "📥 *Instrucciones para Restaurar Datos en un Nuevo Teléfono:*\n\n1. Abre tu aplicación en el nuevo teléfono.\n2. Ve a la pestaña *Configuración* -> *Respaldo y Restauración*.\n3. Presiona *Cargar Archivo de Respaldo* y selecciona el último archivo `.json` enviado por este bot.",
+                parse_mode: "Markdown"
+              })
+            });
+          } else if (text === '/factura' || text === '/reporte' || text === '/start') {
+            await fetch(`https://api.telegram.org/bot${c.tgToken}/sendMessage`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ chat_id: chatId, text: "⏳ Generando documento PDF consolidado..." })
+            });
+
+            const doc = generatePDFDocument();
+            const success = await sendPdfToTelegram(doc, chatId);
+
+            if (!success) {
+              await fetch(`https://api.telegram.org/bot${c.tgToken}/sendMessage`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ chat_id: chatId, text: "❌ Ocurrió un problema al enviar el documento PDF." })
+              });
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("Polling de Telegram no disponible:", e);
+  } finally {
+    isPollingTelegram = false;
+  }
+}
+
+setInterval(checkTelegramCommands, 4000);
+
+/* =========================================================================
+   GENERACIÓN DE REPORTE/FACTURA EN PDF CON CONGRUENCIA DE CUENTAS
+   ========================================================================= */
+function generatePDFDocument() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const c = state.config;
+  const rate = c.currentRate || 1;
+  const threshold = c.lowStockThreshold || 5;
+
+  let totalVentasBrutasUSD = 0;
+  let totalCostoVentasUSD = 0;
+  let totalDevolucionesUSD = 0;
+
+  state.sales.forEach(s => {
+    const saleBruto = s.originalTotalUSD || s.totalUSD;
+    totalVentasBrutasUSD += saleBruto;
+
+    if (s.status !== "ANULADA") {
+      s.items.forEach(i => {
+        const prod = state.products.find(p => p.barcode === i.barcode);
+        const costUnit = prod ? prod.costUSD : (i.unitPriceUSD / 1.3);
+        totalCostoVentasUSD += (costUnit * i.qty);
+      });
+    }
+  });
+
+  state.returns.forEach(r => {
+    totalDevolucionesUSD += (r.refundUSD || 0);
+  });
+
+  const totalNetoUSD = Math.max(0, totalVentasBrutasUSD - totalDevolucionesUSD);
+  const gananciaNetaUSD = Math.max(0, totalNetoUSD - totalCostoVentasUSD);
+
+  let startX = 14;
+  if (c.storeLogo) {
+    try {
+      doc.addImage(c.storeLogo, 'JPEG', 14, 12, 18, 18);
+      startX = 36;
+    } catch(e) {
+      try {
+        doc.addImage(c.storeLogo, 'PNG', 14, 12, 18, 18);
+        startX = 36;
+      } catch(e2){
+        console.warn("No se pudo incrustar la imagen en el PDF:", e2);
+      }
+    }
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.setTextColor(192, 138, 62);
+  doc.text(c.storeName, startX, 20);
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100);
+  doc.text(`REPORTE DE FACTURACIÓN, VENTAS Y AUDITORÍA DE STOCK`, startX, 26);
+  doc.text(`Fecha de emisión: ${new Date().toLocaleString('es-VE')}`, 14, 35);
+  doc.text(`Tasa BCV Aplicada: ${rate.toFixed(2)} Bs/$`, 14, 40);
+
+  doc.setLineWidth(0.5);
+  doc.setDrawColor(200);
+  doc.setFillColor(248, 246, 240);
+  doc.rect(14, 45, 182, 40, 'FD');
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(40);
+  doc.text("CONCILIACIÓN Y BALANCES NETOS", 18, 52);
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Total Ejecución de Ventas (Bruto):`, 18, 59);
+  doc.text(`$${totalVentasBrutasUSD.toFixed(2)} USD (Bs ${(totalVentasBrutasUSD * rate).toFixed(2)})`, 110, 59);
+
+  doc.text(`Total Devoluciones y Anulaciones (-):`, 18, 65);
+  doc.text(`-$${totalDevolucionesUSD.toFixed(2)} USD (Bs ${(totalDevolucionesUSD * rate).toFixed(2)})`, 110, 65);
+
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(192, 138, 62);
+  doc.text(`TOTAL NETO REAL EN CUENTA:`, 18, 72);
+  doc.text(`$${totalNetoUSD.toFixed(2)} USD (Bs ${(totalNetoUSD * rate).toFixed(2)})`, 110, 72);
+
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(60, 133, 98);
+  doc.text(`Ganancia Neta Estimada del Abasto:`, 18, 78);
+  doc.text(`$${gananciaNetaUSD.toFixed(2)} USD (Bs ${(gananciaNetaUSD * rate).toFixed(2)})`, 110, 78);
+
+  let currentY = 93;
+
+  doc.setFontSize(12);
+  doc.setTextColor(40);
+  doc.text("Historial de Ventas Ejecutadas", 14, currentY);
+
+  const salesTableData = state.sales.map(s => [
+    s.id,
+    new Date(s.timestamp).toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit'}),
+    `${s.clientName}\n(${s.clientDoc})`,
+    s.status,
+    `$${(s.originalTotalUSD || s.totalUSD).toFixed(2)}`,
+    `Bs ${((s.originalTotalBs || s.totalBs) || 0).toFixed(2)}`
+  ]);
+
+  doc.autoTable({
+    startY: currentY + 4,
+    head: [['Factura', 'Hora', 'Cliente / ID', 'Estado', 'Total USD', 'Total Bs']],
+    body: salesTableData.length ? salesTableData : [['—', '—', 'Sin registros', '—', '$0.00', 'Bs 0.00']],
+    theme: 'grid',
+    headStyles: { fillColor: [33, 28, 21], textColor: [192, 138, 62] },
+    styles: { fontSize: 8 }
+  });
+
+  currentY = doc.lastAutoTable.finalY + 12;
+
+  doc.setFontSize(12);
+  doc.setTextColor(40);
+  doc.text("Auditoría de Devoluciones y Rectificaciones", 14, currentY);
+
+  const returnsTableData = [];
+  state.returns.forEach(r => {
+    if (r.items && r.items.length > 0) {
+      const itemsText = r.items.map(i => `${i.productName} (x${i.returnedQty})`).join(', ');
+      returnsTableData.push([
+        r.saleId,
+        itemsText,
+        `-$${r.refundUSD.toFixed(2)}`,
+        `-Bs ${(r.refundBs || 0).toFixed(2)}`,
+        `${r.clientName}`
+      ]);
+    } else if (r.productName) {
+      returnsTableData.push([
+        r.saleId,
+        `${r.productName} (x${r.returnedQty})`,
+        `-$${r.refundUSD.toFixed(2)}`,
+        `-Bs ${(r.refundBs || 0).toFixed(2)}`,
+        `${r.clientName}`
+      ]);
+    }
+  });
+
+  doc.autoTable({
+    startY: currentY + 4,
+    head: [['Ref. Factura', 'Productos Devueltos', 'Reembolso USD', 'Reembolso Bs', 'Cliente']],
+    body: returnsTableData.length ? returnsTableData : [['—', 'Sin devoluciones', '$0.00', 'Bs 0.00', '—']],
+    theme: 'grid',
+    headStyles: { fillColor: [193, 68, 63], textColor: [255, 255, 255] },
+    styles: { fontSize: 8 }
+  });
+
+  currentY = doc.lastAutoTable.finalY + 12;
+
+  doc.setFontSize(12);
+  doc.setTextColor(40);
+  doc.text("Estado Actual del Stock e Inventario", 14, currentY);
+
+  const stockTableData = state.products.map(p => {
+    const saleUSD = computeSalePrice(p);
+    let stockLabel = `${p.quantity} unid.`;
+    if (p.quantity === 0) stockLabel = "0 unid. (AGOTADO)";
+    else if (p.quantity <= threshold) stockLabel = `${p.quantity} unid. (BAJO STOCK)`;
+
+    return {
+      qty: p.quantity,
+      row: [
+        p.barcode,
+        p.name,
+        stockLabel,
+        `$${p.costUSD.toFixed(2)}`,
+        `$${saleUSD.toFixed(2)}`,
+        `Bs ${(saleUSD * rate).toFixed(2)}`
+      ]
+    };
+  });
+
+  doc.autoTable({
+    startY: currentY + 4,
+    head: [['Código', 'Producto', 'Stock Disp.', 'Costo USD', 'Venta USD', 'Venta Bs']],
+    body: stockTableData.length ? stockTableData.map(item => item.row) : [['—', 'Sin productos en inventario', '0', '$0.00', '$0.00', 'Bs 0.00']],
+    theme: 'grid',
+    headStyles: { fillColor: [60, 133, 98], textColor: [255, 255, 255] },
+    styles: { fontSize: 8 },
+    didParseCell: function(data) {
+      if (data.section === 'body' && stockTableData.length > 0) {
+        const item = stockTableData[data.row.index];
+        if (item) {
+          if (item.qty === 0) {
+            data.cell.styles.fillColor = [254, 226, 226];
+            data.cell.styles.textColor = [185, 28, 28];
+            if (data.column.index === 2) data.cell.styles.fontStyle = 'bold';
+          } else if (item.qty <= threshold) {
+            data.cell.styles.fillColor = [254, 243, 199];
+            data.cell.styles.textColor = [180, 83, 9];
+            if (data.column.index === 2) data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      }
+    }
+  });
+
+  return doc;
+}
+
+document.getElementById("download-pdf-btn").addEventListener("click", () => {
+  const statusEl = document.getElementById("pdf-status");
+  statusEl.textContent = "Generando PDF...";
+  statusEl.className = "status-line";
+
+  try {
+    const doc = generatePDFDocument();
+    doc.save(`Factura_Reporte_${state.config.storeName.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
+    statusEl.textContent = "Reporte PDF descargado exitosamente.";
+    statusEl.className = "status-line ok";
+  } catch (e) {
+    statusEl.textContent = "Error al generar PDF: " + e.message;
+    statusEl.className = "status-line error";
+  }
+});
+
+/* =========================================================================
+   CONFIGURACIÓN Y GESTIÓN DE LOGO
+   ========================================================================= */
+function loadConfigIntoUI() {
+  const c = state.config;
+  document.getElementById("cfg-store-name").value = c.storeName;
+  document.getElementById("cfg-default-margin").value = c.defaultMargin;
+  document.getElementById("cfg-low-stock").value = c.lowStockThreshold;
+  document.getElementById("cfg-rate-url").value = c.rateApiUrl;
+  document.getElementById("cfg-rate-manual").value = c.manualRate || "";
+  document.getElementById("cfg-tg-token").value = c.tgToken;
+  document.getElementById("cfg-tg-chat").value = c.tgChat;
+  document.getElementById("cfg-time-open").value = c.timeOpen || "08:00";
+  document.getElementById("cfg-time-close").value = c.timeClose || "18:00";
+
+  document.getElementById("store-name-display").textContent = c.storeName;
+  document.getElementById("receipt-store-name").textContent = c.storeName;
+
+  document.getElementById("auto-update-toggle").classList.toggle("on", c.autoUpdateRate);
+  document.getElementById("tg-enabled-toggle").classList.toggle("on", c.tgEnabled);
+  document.getElementById("auto-backup-toggle").classList.toggle("on", c.autoBackupEnabled);
+
+  updateLogoUI();
+  updateRateDisplay();
+  document.getElementById("new-margin").value = c.defaultMargin;
+}
+
+function updateLogoUI() {
+  const logo = state.config.storeLogo;
+  const brandMark = document.getElementById("brand-mark-display");
+  const previewBox = document.getElementById("logo-preview-box");
+  const receiptLogo = document.getElementById("receipt-logo-container");
+  const removeBtn = document.getElementById("remove-logo-btn");
+
+  if (logo) {
+    brandMark.innerHTML = `<img src="${logo}" alt="Logo">`;
+    previewBox.innerHTML = `<img src="${logo}" alt="Preview">`;
+    receiptLogo.innerHTML = `<img src="${logo}" class="receipt-logo" alt="Logo">`;
+    removeBtn.style.display = "inline-block";
+  } else {
+    brandMark.textContent = state.config.storeName ? state.config.storeName.charAt(0).toUpperCase() : "A";
+    previewBox.innerHTML = `<span style="font-size:10px; color:var(--muted);">Sin Logo</span>`;
+    receiptLogo.innerHTML = "";
+    removeBtn.style.display = "none";
+  }
+}
+
+document.getElementById("cfg-logo-input").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    state.config.storeLogo = evt.target.result;
+    saveConfig();
+    updateLogoUI();
+    const s = document.getElementById("config-status");
+    s.textContent = "Logo cargado y guardado correctamente.";
+    s.className = "status-line ok";
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById("remove-logo-btn").addEventListener("click", () => {
+  state.config.storeLogo = null;
+  saveConfig();
+  updateLogoUI();
+  document.getElementById("cfg-logo-input").value = "";
+  const s = document.getElementById("config-status");
+  s.textContent = "Logo eliminado.";
+  s.className = "status-line";
+});
+
+loadConfigIntoUI();
+
+document.getElementById("save-config").addEventListener("click", () => {
+  const c = state.config;
+  c.storeName = document.getElementById("cfg-store-name").value.trim() || "Mi Abasto";
+  c.defaultMargin = parseFloat(document.getElementById("cfg-default-margin").value) || 0;
+  c.lowStockThreshold = parseInt(document.getElementById("cfg-low-stock").value) || 5;
+  c.timeOpen = document.getElementById("cfg-time-open").value || "08:00";
+  c.timeClose = document.getElementById("cfg-time-close").value || "18:00";
+  saveConfig();
+  loadConfigIntoUI();
+  renderStockTable();
+  const s = document.getElementById("config-status");
+  s.textContent = "Configuración guardada con éxito.";
+  s.className = "status-line ok";
+});
+
+document.getElementById("auto-update-toggle").addEventListener("click", function(){
+  state.config.autoUpdateRate = !state.config.autoUpdateRate;
+  this.classList.toggle("on", state.config.autoUpdateRate);
+});
+document.getElementById("tg-enabled-toggle").addEventListener("click", function(){
+  state.config.tgEnabled = !state.config.tgEnabled;
+  this.classList.toggle("on", state.config.tgEnabled);
+});
+document.getElementById("auto-backup-toggle").addEventListener("click", function(){
+  state.config.autoBackupEnabled = !state.config.autoBackupEnabled;
+  this.classList.toggle("on", state.config.autoBackupEnabled);
+  saveConfig();
+});
+
+document.getElementById("save-rate-config").addEventListener("click", () => {
+  const c = state.config;
+  c.rateApiUrl = document.getElementById("cfg-rate-url").value.trim() || DEFAULT_RATE_API;
+  const manual = document.getElementById("cfg-rate-manual").value;
+  c.manualRate = manual ? parseFloat(manual) : null;
+  saveConfig();
+  if (c.manualRate) {
+    c.currentRate = c.manualRate;
+    c.rateLastUpdated = new Date().toISOString();
+    saveConfig();
+    updateRateDisplay();
+  }
+  const s = document.getElementById("rate-status");
+  s.textContent = "Configuración de tasa guardada.";
+  s.className = "status-line ok";
+});
+
+document.getElementById("save-tg-config").addEventListener("click", () => {
+  const c = state.config;
+  c.tgToken = document.getElementById("cfg-tg-token").value.trim();
+  c.tgChat = document.getElementById("cfg-tg-chat").value.trim();
+  saveConfig();
+  const s = document.getElementById("tg-status");
+  s.textContent = "Configuración de Telegram guardada.";
+  s.className = "status-line ok";
+});
+
+document.getElementById("test-telegram-btn").addEventListener("click", async () => {
+  const s = document.getElementById("tg-status");
+  s.textContent = "Enviando mensaje de prueba...";
+  s.className = "status-line";
+  const c = state.config;
+  if (!c.tgToken || !c.tgChat) {
+    s.textContent = "Faltan el token o el chat ID.";
+    s.className = "status-line error";
+    return;
+  }
+  try {
+    const resp = await fetch(`https://api.telegram.org/bot${c.tgToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: c.tgChat, text: `✅ Conexión de prueba desde *${c.storeName}*.\nComandos:\n/backup - Recibir copia de seguridad\n/restore - Instrucciones de restauración\n/factura - Recibir PDF`, parse_mode: "Markdown" })
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    s.textContent = "Mensaje enviado. Revisa tu Telegram.";
+    s.className = "status-line ok";
+  } catch (e) {
+    s.textContent = "Error: " + e.message;
+    s.className = "status-line error";
+  }
+});
+
+/* =========================================================================
+   TASA BCV
+   ========================================================================= */
+function updateRateDisplay() {
+  const c = state.config;
+  document.getElementById("rate-display").textContent = c.currentRate
+    ? c.currentRate.toFixed(2)
+    : "—";
+}
+
+function extractRateFromJson(data) {
+  const candidates = ["promedio", "price", "precio", "rate", "tasa", "dolar", "venta", "valor", "value"];
+  for (const key of candidates) {
+    if (typeof data[key] === "number") return data[key];
+    if (typeof data[key] === "string" && !isNaN(parseFloat(data[key]))) return parseFloat(data[key]);
+  }
+  for (const key in data) {
+    if (typeof data[key] === "object" && data[key] !== null) {
+      const nested = extractRateFromJsonSafe(data[key], candidates);
+      if (nested !== null) return nested;
+    }
+  }
+  return null;
+}
+function extractRateFromJsonSafe(obj, candidates) {
+  for (const key of candidates) {
+    if (typeof obj[key] === "number") return obj[key];
+  }
+  return null;
+}
+
+async function fetchRate() {
+  const s = document.getElementById("rate-status");
+  const c = state.config;
+  if (c.manualRate) {
+    c.currentRate = c.manualRate;
+    c.rateLastUpdated = new Date().toISOString();
+    saveConfig();
+    updateRateDisplay();
+    s.textContent = "Usando tasa manual configurada.";
+    s.className = "status-line ok";
+    return;
+  }
+  s.textContent = "Consultando tasa...";
+  s.className = "status-line";
+  try {
+    const resp = await fetch(c.rateApiUrl);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    const rate = extractRateFromJson(data);
+    if (!rate) throw new Error("No se encontró un valor numérico reconocible en la respuesta.");
+    c.currentRate = rate;
+    c.rateLastUpdated = new Date().toISOString();
+    saveConfig();
+    updateRateDisplay();
+    s.textContent = `Tasa actualizada: ${rate.toFixed(2)} Bs/$ (${new Date().toLocaleString()})`;
+    s.className = "status-line ok";
+  } catch (e) {
+    s.textContent = "No se pudo actualizar la tasa: " + e.message + ". Puedes usar la tasa manual.";
+    s.className = "status-line error";
+  }
+}
+document.getElementById("fetch-rate-btn").addEventListener("click", fetchRate);
+
+function autoUpdateRateIfNeeded() {
+  const c = state.config;
+  if (!c.autoUpdateRate) return;
+  const today = new Date().toDateString();
+  const last = c.rateLastUpdated ? new Date(c.rateLastUpdated).toDateString() : null;
+  if (today !== last) fetchRate();
+}
+autoUpdateRateIfNeeded();
+
+/* =========================================================================
+   ESCÁNER DE CÓDIGO DE BARRAS (ZXing)
+   ========================================================================= */
+let barcodeReader = null;
+
+function stopAllScanners() {
+  if (barcodeReader) {
+    try { barcodeReader.reset(); } catch(e){}
+  }
+  [document.getElementById("barcode-video"), document.getElementById("pos-video")].forEach(v => {
+    if (v && v.srcObject) {
+      v.srcObject.getTracks().forEach(t => t.stop());
+      v.srcObject = null;
+    }
+    if (v) v.style.display = "none";
+  });
+  document.getElementById("scan-barcode-btn").style.display = "inline-block";
+  document.getElementById("stop-barcode-btn").style.display = "none";
+  document.getElementById("scan-pos-btn").style.display = "inline-block";
+  document.getElementById("stop-pos-btn").style.display = "none";
+}
+
+function startBarcodeScan(videoElId, onResult, statusElId) {
+  stopAllScanners();
+  const videoEl = document.getElementById(videoElId);
+  const statusEl = document.getElementById(statusElId);
+  videoEl.style.display = "block";
+
+  if (!barcodeReader) barcodeReader = new ZXing.BrowserMultiFormatReader();
+
+  barcodeReader.decodeFromConstraints(
+    { video: { facingMode: "environment" } },
+    videoEl,
+    (result, err) => {
+      if (result) {
+        onResult(result.getText());
+        if (statusEl) {
+          statusEl.textContent = "Código detectado: " + result.getText();
+          statusEl.className = "status-line ok";
+        }
+        stopAllScanners();
+      }
+    }
+  ).catch(err => {
+    if (statusEl) {
+      statusEl.textContent = "No se pudo acceder a la cámara: " + err.message;
+      statusEl.className = "status-line error";
+    }
+  });
+}
+
+document.getElementById("scan-barcode-btn").addEventListener("click", () => {
+  document.getElementById("scan-barcode-btn").style.display = "none";
+  document.getElementById("stop-barcode-btn").style.display = "inline-block";
+  startBarcodeScan("barcode-video", (text) => {
+    document.getElementById("new-barcode").value = text;
+  }, "scan-status");
+});
+document.getElementById("stop-barcode-btn").addEventListener("click", stopAllScanners);
+
+document.getElementById("scan-pos-btn").addEventListener("click", () => {
+  document.getElementById("scan-pos-btn").style.display = "none";
+  document.getElementById("stop-pos-btn").style.display = "inline-block";
+  startBarcodeScan("pos-video", (text) => {
+    handleBarcodeForSale(text);
+    setTimeout(() => {
+      document.getElementById("scan-pos-btn").click();
+    }, 600);
+  }, "pos-status");
+});
+document.getElementById("stop-pos-btn").addEventListener("click", stopAllScanners);
+
+/* =========================================================================
+   PRECIO DE COSTO BIDIRECCIONAL (USD / Bs) Y MODO DE CÁLCULO DE PRECIO
+   ========================================================================= */
+const costUsdInput = document.getElementById("new-cost-usd");
+const costBsInput = document.getElementById("new-cost-bs");
+const pricingModeSelect = document.getElementById("pricing-mode");
+const containerMargin = document.getElementById("container-margin");
+const containerDirectPrice = document.getElementById("container-direct-price");
+const directPriceInput = document.getElementById("new-direct-price");
+
+costUsdInput.addEventListener("input", () => {
+  const rate = state.config.currentRate || 0;
+  const valUSD = parseFloat(costUsdInput.value) || 0;
+  if (rate > 0 && document.activeElement === costUsdInput) {
+    costBsInput.value = (valUSD * rate).toFixed(2);
+  }
+  updatePricePreview();
+});
+
+costBsInput.addEventListener("input", () => {
+  const rate = state.config.currentRate || 0;
+  const valBs = parseFloat(costBsInput.value) || 0;
+  if (rate > 0 && document.activeElement === costBsInput) {
+    costUsdInput.value = (valBs / rate).toFixed(2);
+  }
+  updatePricePreview();
+});
+
+pricingModeSelect.addEventListener("change", () => {
+  if (pricingModeSelect.value === "margin") {
+    containerMargin.style.display = "block";
+    containerDirectPrice.style.display = "none";
+  } else {
+    containerMargin.style.display = "none";
+    containerDirectPrice.style.display = "block";
+  }
+  updatePricePreview();
+});
+
+function computeSalePrice(productData) {
+  if (productData.pricingMode === "direct") {
+    return productData.directPriceUSD || 0;
+  }
+  const cost = productData.costUSD || 0;
+  const margin = productData.marginPct || 0;
+  return cost * (1 + margin / 100);
+}
+
+function updatePricePreview() {
+  const costUSD = parseFloat(costUsdInput.value) || 0;
+  const mode = pricingModeSelect.value;
+  const margin = parseFloat(document.getElementById("new-margin").value) || 0;
+  const directPrice = parseFloat(directPriceInput.value) || 0;
+
+  const previewObj = {
+    costUSD: costUSD,
+    pricingMode: mode,
+    marginPct: margin,
+    directPriceUSD: directPrice
+  };
+
+  const sale = computeSalePrice(previewObj);
+  const rate = state.config.currentRate;
+  const bsText = rate ? ` (Bs ${(sale * rate).toLocaleString('es-VE', {minimumFractionDigits:2, maximumFractionDigits:2})})` : "";
+  document.getElementById("price-preview").textContent = `Precio de venta: $${sale.toFixed(2)}${bsText}`;
+}
+
+["new-margin", "new-direct-price"].forEach(id => {
+  document.getElementById(id).addEventListener("input", updatePricePreview);
+});
+
+/* =========================================================================
+   INVENTARIO — agregar / listar / ajustar (+/−) / eliminar
+   ========================================================================= */
+function findProduct(barcode) {
+  return state.products.find(p => p.barcode === barcode);
+}
+
+document.getElementById("add-product-btn").addEventListener("click", () => {
+  const statusEl = document.getElementById("add-status");
+  const barcode = document.getElementById("new-barcode").value.trim();
+  const name = document.getElementById("new-name").value.trim();
+  const qty = parseInt(document.getElementById("new-qty").value) || 0;
+  const costUSD = parseFloat(costUsdInput.value) || 0;
+  const mode = pricingModeSelect.value;
+  const margin = parseFloat(document.getElementById("new-margin").value) || 0;
+  const directPrice = parseFloat(directPriceInput.value) || 0;
+
+  if (!barcode || !name) {
+    statusEl.textContent = "Falta el código de barras o el nombre del producto.";
+    statusEl.className = "status-line error";
+    return;
+  }
+
+  let product = findProduct(barcode);
+  if (product) {
+    product.quantity += qty;
+    product.name = name;
+    product.costUSD = costUSD;
+    product.pricingMode = mode;
+    product.marginPct = margin;
+    product.directPriceUSD = directPrice;
+  } else {
+    product = { 
+      barcode, 
+      name, 
+      quantity: qty, 
+      costUSD, 
+      pricingMode: mode, 
+      marginPct: margin, 
+      directPriceUSD: directPrice 
+    };
+    state.products.push(product);
+  }
+  saveProducts();
+  renderStockTable();
+
+  statusEl.textContent = `"${name}" agregado/actualizado en el stock.`;
+  statusEl.className = "status-line ok";
+
+  notifyTelegram(
+    `📦 *Stock ingresado/actualizado*\n` +
+    `Producto: ${name}\n` +
+    `Código: ${barcode}\n` +
+    `Agregado: +${qty}\n` +
+    `Stock total: ${product.quantity} unid.`
+  );
+  checkLowStock(product);
+
+  document.getElementById("new-barcode").value = "";
+  document.getElementById("new-name").value = "";
+  document.getElementById("new-qty").value = "";
+  costUsdInput.value = "";
+  costBsInput.value = "";
+  directPriceInput.value = "";
+  document.getElementById("new-margin").value = state.config.defaultMargin;
+  updatePricePreview();
+});
+
+function checkLowStock(product) {
+  const threshold = state.config.lowStockThreshold;
+  if (product.quantity <= threshold && product.quantity > 0) {
+    notifyTelegram(
+      `⚠️ *Alerta: Stock Bajo*\n` +
+      `Producto: ${product.name}\n` +
+      `Código: ${product.barcode}\n` +
+      `Quedan solo ${product.quantity} unidades (Umbral: ${threshold}).`
+    );
+  } else if (product.quantity === 0) {
+    notifyTelegram(
+      `🚨 *Alerta: Producto Agotado*\n` +
+      `Producto: ${product.name}\n` +
+      `Código: ${product.barcode}\n` +
+      `¡Atención! El producto no tiene unidades disponibles.`
+    );
+  }
+}
+
+function adjustQuantity(barcode, delta) {
+  const product = findProduct(barcode);
+  if (!product) return;
+
+  const previousQty = product.quantity;
+  product.quantity = Math.max(0, product.quantity + delta);
+  saveProducts();
+  renderStockTable();
+
+  const changeText = delta > 0 ? `+${delta}` : `${delta}`;
+  notifyTelegram(
+    `🔄 *Ajuste Manual de Inventario*\n` +
+    `Producto: ${product.name}\n` +
+    `Código: ${product.barcode}\n` +
+    `Cambio: ${changeText}\n` +
+    `Stock anterior: ${previousQty}\n` +
+    `Nuevo stock: ${product.quantity} unid.`
+  );
+
+  checkLowStock(product);
+}
+
+function deleteProduct(barcode) {
+  const product = findProduct(barcode);
+  state.products = state.products.filter(p => p.barcode !== barcode);
+  saveProducts();
+  renderStockTable();
+  if(product) {
+    notifyTelegram(`🗑️ *Producto Eliminado*\nProducto: ${product.name}\nCódigo: ${product.barcode}`);
+  }
+}
+
+document.getElementById("inventory-search").addEventListener("input", () => {
+  renderStockTable();
+});
+
+function renderStockTable() {
+  const wrap = document.getElementById("stock-table-wrap");
+  const filter = (document.getElementById("inventory-search").value || "").toLowerCase().trim();
+
+  let filteredProducts = state.products.filter(p => 
+    p.name.toLowerCase().includes(filter) || p.barcode.toLowerCase().includes(filter)
+  );
+
+  if (filteredProducts.length === 0) {
+    wrap.innerHTML = `<div class="empty-msg">No se encontraron productos en el stock.</div>`;
+    return;
+  }
+  const rate = state.config.currentRate;
+  const threshold = state.config.lowStockThreshold;
+
+  let rows = filteredProducts.map(p => {
+    const sale = computeSalePrice(p);
+    const salebs = rate ? `Bs ${(sale * rate).toLocaleString('es-VE', {minimumFractionDigits:2, maximumFractionDigits:2})}` : "—";
+    
+    let rowClass = "";
+    let qtyClass = "";
+    let badgeHtml = "";
+
+    if (p.quantity === 0) {
+      rowClass = "row-out-of-stock";
+      qtyClass = "out";
+      badgeHtml = `<br><span class="badge-stock out">AGOTADO</span>`;
+    } else if (p.quantity <= threshold) {
+      rowClass = "row-low-stock";
+      qtyClass = "low";
+      badgeHtml = `<br><span class="badge-stock low">STOCK BAJO</span>`;
+    }
+
+    const marginDisplay = p.pricingMode === "direct" ? "Directo" : `${p.marginPct || 0}%`;
+
+    return `
+      <tr class="${rowClass}">
+        <td>
+          <div class="prod-name">${escapeHtml(p.name)}</div>
+          <div class="prod-barcode">${escapeHtml(p.barcode)}</div>
+        </td>
+        <td>
+          <div class="qty-cell">
+            <button class="pct-btn minus" onclick="adjustQuantity('${p.barcode}', -1)">−</button>
+            <div>
+              <span class="qty-value ${qtyClass}">${p.quantity}</span>
+              ${badgeHtml}
+            </div>
+            <button class="pct-btn" onclick="adjustQuantity('${p.barcode}', 1)">+</button>
+          </div>
+        </td>
+        <td><div class="price-usd">$${(p.costUSD || 0).toFixed(2)}</div></td>
+        <td>${marginDisplay}</td>
+        <td><div class="price-usd">$${sale.toFixed(2)}</div><div class="price-bs">${salebs}</div></td>
+        <td><button class="del-btn" onclick="deleteProduct('${p.barcode}')" title="Eliminar">✕</button></td>
+      </tr>
+    `;
+  }).join("");
+
+  wrap.innerHTML = `
+    <table class="stock-table">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Costo</th>
+          <th>Margen</th>
+          <th>Venta</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* =========================================================================
+   PUNTO DE VENTA — Búsqueda activa, escáner, carrito (+/−)
+   ========================================================================= */
+const posInput = document.getElementById("pos-manual-input");
+const posResultsBox = document.getElementById("pos-search-results");
+
+posInput.addEventListener("input", () => {
+  const query = posInput.value.trim().toLowerCase();
+  if (!query) {
+    posResultsBox.style.display = "none";
+    posResultsBox.innerHTML = "";
+    return;
+  }
+
+  const matches = state.products.filter(p => 
+    p.name.toLowerCase().includes(query) || p.barcode.toLowerCase().includes(query)
+  );
+
+  if (matches.length === 0) {
+    posResultsBox.style.display = "none";
+    return;
+  }
+
+  const rate = state.config.currentRate;
+  posResultsBox.innerHTML = matches.map(p => {
+    const sale = computeSalePrice(p);
+    const bs = rate ? ` (Bs ${(sale * rate).toFixed(2)})` : "";
+    return `
+      <div class="search-item" onclick="selectPosSearchResult('${p.barcode}')">
+        <div class="search-item-info">
+          <span class="search-item-name">${escapeHtml(p.name)}</span>
+          <span class="search-item-code">${escapeHtml(p.barcode)} | Disp: ${p.quantity} unid.</span>
+        </div>
+        <div class="search-item-price">$${sale.toFixed(2)}${bs}</div>
+      </div>
+    `;
+  }).join("");
+  posResultsBox.style.display = "block";
+});
+
+function selectPosSearchResult(barcode) {
+  handleBarcodeForSale(barcode);
+  posInput.value = "";
+  posResultsBox.style.display = "none";
+  posInput.focus();
+}
+
+posInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    const term = posInput.value.trim();
+    if (!term) return;
+
+    let p = findProduct(term);
+    if (p) {
+      handleBarcodeForSale(p.barcode);
+    } else {
+      const matches = state.products.filter(item => item.name.toLowerCase().includes(term.toLowerCase()));
+      if (matches.length === 1) {
+        handleBarcodeForSale(matches[0].barcode);
+      } else if (matches.length > 1) {
+        document.getElementById("pos-status").textContent = "Se encontraron varios resultados. Selecciónalo en la lista desplegable.";
+        document.getElementById("pos-status").className = "status-line error";
+        return;
+      } else {
+        document.getElementById("pos-status").textContent = `No se encontró ningún producto relacionado con "${term}".`;
+        document.getElementById("pos-status").className = "status-line error";
+        return;
+      }
+    }
+    posInput.value = "";
+    posResultsBox.style.display = "none";
+  }
+});
+
+function handleBarcodeForSale(barcode) {
+  const statusEl = document.getElementById("pos-status");
+  const product = findProduct(barcode);
+  if (!product) {
+    statusEl.textContent = `Código/Producto ${barcode} no encontrado en el stock.`;
+    statusEl.className = "status-line error";
+    return;
+  }
+  if (product.quantity <= 0) {
+    statusEl.textContent = `"${product.name}" no tiene unidades disponibles en inventario.`;
+    statusEl.className = "status-line error";
+    return;
+  }
+  let item = state.cart.find(i => i.barcode === barcode);
+  const inCartQty = item ? item.qty : 0;
+  if (inCartQty >= product.quantity) {
+    statusEl.textContent = `Límite alcanzado: No hay más stock disponible de "${product.name}".`;
+    statusEl.className = "status-line error";
+    return;
+  }
+  if (item) {
+    item.qty += 1;
+  } else {
+    const salePrice = computeSalePrice(product);
+    state.cart.push({ barcode, name: product.name, qty: 1, unitPriceUSD: salePrice });
+  }
+  statusEl.textContent = `"${product.name}" agregado a la venta.`;
+  statusEl.className = "status-line ok";
+  renderCart();
+}
+
+function adjustCartQty(barcode, delta) {
+  const item = state.cart.find(i => i.barcode === barcode);
+  if (!item) return;
+  const product = findProduct(barcode);
+  const newQty = item.qty + delta;
+  if (newQty <= 0) {
+    state.cart = state.cart.filter(i => i.barcode !== barcode);
+  } else if (product && newQty > product.quantity) {
+    const s = document.getElementById("pos-status");
+    s.textContent = `No puedes agregar más: Stock máximo disponible de "${item.name}" alcanzado.`;
+    s.className = "status-line error";
+    return;
+  } else {
+    item.qty = newQty;
+  }
+  renderCart();
+}
+
+document.getElementById("client-doc").addEventListener("input", updateReceiptClientDisplay);
+document.getElementById("client-name").addEventListener("input", updateReceiptClientDisplay);
+
+function updateReceiptClientDisplay() {
+  const doc = document.getElementById("client-doc").value.trim();
+  const name = document.getElementById("client-name").value.trim();
+  const display = document.getElementById("receipt-client-display");
+
+  if (doc || name) {
+    display.innerHTML = `<strong>Cliente:</strong> ${escapeHtml(name || "S/N")} <br><strong>ID/Cédula:</strong> ${escapeHtml(doc || "S/I")}`;
+  } else {
+    display.innerHTML = `Cliente: General / Sin Identificación`;
+  }
+}
+
+function renderCart() {
+  const linesEl = document.getElementById("receipt-lines");
+  const rate = state.config.currentRate;
+
+  document.getElementById("receipt-store-name").textContent = state.config.storeName;
+  document.getElementById("receipt-date").textContent = new Date().toLocaleString('es-VE');
+  updateReceiptClientDisplay();
+
+  if (state.cart.length === 0) {
+    linesEl.innerHTML = `<div class="cart-empty">Aún no has escaneado ni agregado productos.</div>`;
+    document.getElementById("total-usd").textContent = "$0.00";
+    document.getElementById("total-bs").textContent = "Bs 0,00";
+    document.getElementById("total-grand").textContent = "$0.00";
+    document.getElementById("finish-sale-btn").disabled = true;
+    document.getElementById("cancel-sale-btn").disabled = true;
+    return;
+  }
+
+  let totalUSD = 0;
+  linesEl.innerHTML = state.cart.map(item => {
+    const subtotal = item.qty * item.unitPriceUSD;
+    totalUSD += subtotal;
+    return `
+      <div class="receipt-line">
+        <div class="rl-name">${escapeHtml(item.name)}</div>
+        <div class="rl-qty">
+          <button class="pct-btn minus" onclick="adjustCartQty('${item.barcode}', -1)">−</button>
+          <span class="qty-value">${item.qty}</span>
+          <button class="pct-btn" onclick="adjustCartQty('${item.barcode}', 1)">+</button>
+        </div>
+        <div class="rl-subtotal">$${subtotal.toFixed(2)}</div>
+      </div>
+    `;
+  }).join("");
+
+  const totalBs = rate ? totalUSD * rate : null;
+  document.getElementById("total-usd").textContent = `$${totalUSD.toFixed(2)}`;
+  document.getElementById("total-bs").textContent = totalBs
+    ? `Bs ${totalBs.toLocaleString('es-VE', {minimumFractionDigits:2, maximumFractionDigits:2})}`
+    : "Bs — (configura la tasa)";
+  document.getElementById("total-grand").textContent = `$${totalUSD.toFixed(2)}`;
+
+  document.getElementById("finish-sale-btn").disabled = false;
+  document.getElementById("cancel-sale-btn").disabled = false;
+}
+
+document.getElementById("cancel-sale-btn").addEventListener("click", () => {
+  state.cart = [];
+  document.getElementById("client-doc").value = "";
+  document.getElementById("client-name").value = "";
+  renderCart();
+  const s = document.getElementById("sale-status");
+  s.textContent = "Venta cancelada.";
+  s.className = "status-line";
+});
+
+/* =========================================================================
+   FINALIZAR VENTA & GUARDAR REGISTRO
+   ========================================================================= */
+document.getElementById("finish-sale-btn").addEventListener("click", () => {
+  if (state.cart.length === 0) return;
+  const rate = state.config.currentRate;
+  const clientDoc = document.getElementById("client-doc").value.trim();
+  const clientName = document.getElementById("client-name").value.trim();
+
+  let totalUSD = 0;
+  let summaryLines = [];
+  let saleItems = [];
+
+  state.cart.forEach(item => {
+    const product = findProduct(item.barcode);
+    if (product) {
+      product.quantity = Math.max(0, product.quantity - item.qty);
+    }
+    const subtotal = item.qty * item.unitPriceUSD;
+    totalUSD += subtotal;
+    summaryLines.push(`• ${item.name} x${item.qty} — $${subtotal.toFixed(2)}`);
+    
+    saleItems.push({
+      barcode: item.barcode,
+      name: item.name,
+      qty: item.qty,
+      unitPriceUSD: item.unitPriceUSD,
+      subtotalUSD: subtotal
+    });
+  });
+
+  saveProducts();
+  renderStockTable();
+
+  const totalBs = rate ? totalUSD * rate : 0;
+
+  const newSale = {
+    id: "VEN-" + Date.now().toString().slice(-6),
+    timestamp: new Date().toISOString(),
+    clientDoc: clientDoc || "Sin Cédula",
+    clientName: clientName || "Cliente General",
+    items: saleItems,
+    originalTotalUSD: totalUSD,
+    originalTotalBs: totalBs,
+    totalUSD: totalUSD,
+    totalBs: totalBs,
+    rateUsed: rate,
+    status: "COMPLETADA"
+  };
+
+  state.sales.unshift(newSale);
+  saveSales();
+  renderDailySales();
+
+  const s = document.getElementById("sale-status");
+  s.textContent = `Venta finalizada (${newSale.id}): $${totalUSD.toFixed(2)}` + (totalBs ? ` (Bs ${totalBs.toFixed(2)})` : "");
+  s.className = "status-line ok";
+
+  const clientInfoTelegram = (clientName || clientDoc) ? `👤 *Cliente:* ${clientName} (${clientDoc})\n` : "";
+
+  notifyTelegram(
+    `💰 *Venta Realizada (${newSale.id})*\n` +
+    `${clientInfoTelegram}` +
+    `${summaryLines.join("\n")}\n\n` +
+    `Total: $${totalUSD.toFixed(2)}` + (totalBs ? ` (Bs ${totalBs.toLocaleString('es-VE', {minimumFractionDigits:2})})` : "")
+  );
+
+  state.cart.forEach(item => {
+    const product = findProduct(item.barcode);
+    if (product) checkLowStock(product);
+  });
+
+  state.cart = [];
+  document.getElementById("client-doc").value = "";
+  document.getElementById("client-name").value = "";
+  renderCart();
+});
+
+/* =========================================================================
+   GESTIÓN DE DEVOLUCIONES Y ANULACIONES DENTRO DEL EXPEDIENTE
+   ========================================================================= */
+function returnSingleItem(saleId, barcode) {
+  const sale = state.sales.find(s => s.id === saleId);
+  if (!sale || sale.status === "ANULADA") return;
+
+  const item = sale.items.find(i => i.barcode === barcode);
+  if (!item || item.qty <= 0) return;
+
+  const product = findProduct(barcode);
+  if (product) {
+    product.quantity += 1;
+    saveProducts();
+    renderStockTable();
+  }
+
+  item.qty -= 1;
+  item.subtotalUSD = item.qty * item.unitPriceUSD;
+  const refundUSD = item.unitPriceUSD;
+  const refundBs = sale.rateUsed ? refundUSD * sale.rateUsed : 0;
+
+  sale.totalUSD = Math.max(0, sale.totalUSD - refundUSD);
+  sale.totalBs = sale.rateUsed ? sale.totalUSD * sale.rateUsed : 0;
+  sale.status = "RECTIFICADA";
+
+  const returnRecord = {
+    id: "DEV-" + Date.now().toString().slice(-6),
+    saleId: sale.id,
+    timestamp: new Date().toISOString(),
+    clientDoc: sale.clientDoc,
+    clientName: sale.clientName,
+    productName: item.name,
+    returnedQty: 1,
+    refundUSD: refundUSD,
+    refundBs: refundBs,
+    items: [{ productName: item.name, returnedQty: 1 }]
+  };
+
+  state.returns.unshift(returnRecord);
+  saveSales();
+  saveReturns();
+  renderDailySales();
+  renderDailyReturns();
+
+  notifyTelegram(
+    `🔄 *Devolución / Rectificación Realizada*\n` +
+    `Ref. Factura: ${sale.id}\n` +
+    `Cliente: ${sale.clientName} (${sale.clientDoc})\n` +
+    `Producto Deuelto: ${item.name} (x1)\n` +
+    `Reembolso: $${refundUSD.toFixed(2)}` + (refundBs ? ` (Bs ${refundBs.toFixed(2)})` : "")
+  );
+}
+
+function voidFullSale(saleId) {
+  const sale = state.sales.find(s => s.id === saleId);
+  if (!sale || sale.status === "ANULADA") return;
+
+  if (!confirm(`¿Estás seguro de anular la venta ${sale.id}? Se reingresarán todos sus productos al stock.`)) return;
+
+  sale.items.forEach(i => {
+    if (i.qty > 0) {
+      const product = findProduct(i.barcode);
+      if (product) {
+        product.quantity += i.qty;
+      }
+    }
+  });
+
+  saveProducts();
+  renderStockTable();
+
+  const refundUSD = sale.totalUSD;
+  const refundBs = sale.totalBs;
+
+  const returnRecord = {
+    id: "DEV-" + Date.now().toString().slice(-6),
+    saleId: sale.id,
+    timestamp: new Date().toISOString(),
+    clientDoc: sale.clientDoc,
+    clientName: sale.clientName,
+    productName: "ANULACIÓN COMPLETA FACTURA",
+    returnedQty: 1,
+    refundUSD: refundUSD,
+    refundBs: refundBs,
+    items: sale.items.map(i => ({ productName: i.name, returnedQty: i.qty }))
+  };
+
+  sale.status = "ANULADA";
+  sale.totalUSD = 0;
+  sale.totalBs = 0;
+
+  state.returns.unshift(returnRecord);
+  saveSales();
+  saveReturns();
+  renderDailySales();
+  renderDailyReturns();
+
+  notifyTelegram(
+    `❌ *ANULACIÓN COMPLETA DE VENTA*\n` +
+    `Factura: ${sale.id}\n` +
+    `Cliente: ${sale.clientName} (${sale.clientDoc})\n` +
+    `Monto Anulado: $${refundUSD.toFixed(2)}` + (refundBs ? ` (Bs ${refundBs.toFixed(2)})` : "")
+  );
+}
+
+/* =========================================================================
+   RENDERS Y REGISTROS DE VENTAS / DEVOLUCIONES DIARIAS
+   ========================================================================= */
+document.getElementById("sales-search").addEventListener("input", renderDailySales);
+document.getElementById("returns-search").addEventListener("input", renderDailyReturns);
+
+function renderDailySales() {
+  const container = document.getElementById("daily-sales-list");
+  const badge = document.getElementById("sales-count-badge");
+  const query = (document.getElementById("sales-search").value || "").toLowerCase().trim();
+
+  let filtered = state.sales.filter(s => 
+    s.id.toLowerCase().includes(query) ||
+    s.clientDoc.toLowerCase().includes(query) ||
+    s.clientName.toLowerCase().includes(query)
+  );
+
+  badge.textContent = `${state.sales.length} Ventas`;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty-msg">No se encontraron ventas asociadas a la búsqueda.</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(s => {
+    const isVoid = s.status === "ANULADA";
+    const statusBadge = isVoid 
+      ? `<span class="badge-void">ANULADA</span>` 
+      : (s.status === "RECTIFICADA" ? `<span class="badge-rectified">RECTIFICADA</span>` : "");
+
+    const itemsHtml = s.items.map(i => `
+      <div class="sale-item-row">
+        <div class="sale-item-info">
+          <span>${escapeHtml(i.name)} (x${i.qty})</span>
+        </div>
+        <div class="sale-item-controls">
+          <span>$${i.subtotalUSD.toFixed(2)}</span>
+          ${(!isVoid && i.qty > 0) ? `<button class="pct-btn minus" title="Quitar 1 unidad (Devolución)" onclick="returnSingleItem('${s.id}', '${i.barcode}')">−</button>` : ""}
+        </div>
+      </div>
+    `).join("");
+
+    return `
+      <div class="sale-card-item">
+        <div class="sale-card-header">
+          <div>
+            <span class="sale-id">${s.id}</span> ${statusBadge}
+          </div>
+          <span class="sale-time">${new Date(s.timestamp).toLocaleTimeString('es-VE')}</span>
+        </div>
+        <div class="sale-client-badge">
+          👤 <strong>${escapeHtml(s.clientName)}</strong> | ID: ${escapeHtml(s.clientDoc)}
+        </div>
+        <div>${itemsHtml}</div>
+        <div class="sale-summary-footer">
+          <div class="sale-summary-line">
+            <span>Total Final (USD):</span>
+            <strong>$${s.totalUSD.toFixed(2)}</strong>
+          </div>
+          <div class="sale-summary-line">
+            <span>Total Final (Bs):</span>
+            <span>Bs ${s.totalBs ? s.totalBs.toFixed(2) : "0.00"}</span>
+          </div>
+          ${!isVoid ? `
+            <div style="margin-top: 8px; text-align: right;">
+              <button class="btn-void-sale" onclick="voidFullSale('${s.id}')">✕ Anular Factura Completa</button>
+            </div>
+          ` : ""}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderDailyReturns() {
+  const container = document.getElementById("daily-returns-list");
+  const badge = document.getElementById("returns-count-badge");
+  const query = (document.getElementById("returns-search").value || "").toLowerCase().trim();
+
+  let filtered = state.returns.filter(r => 
+    r.id.toLowerCase().includes(query) ||
+    r.saleId.toLowerCase().includes(query) ||
+    r.clientDoc.toLowerCase().includes(query) ||
+    r.clientName.toLowerCase().includes(query) ||
+    (r.productName && r.productName.toLowerCase().includes(query))
+  );
+
+  badge.textContent = `${state.returns.length} Devoluciones`;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty-msg">No se encontraron devoluciones registradas.</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(r => `
+    <div class="returns-card-item">
+      <div class="returns-card-header">
+        <span>ID: <strong>${r.id}</strong> (Ref: ${r.saleId})</span>
+        <span>${new Date(r.timestamp).toLocaleTimeString('es-VE')}</span>
+      </div>
+      <div>👤 <strong>${escapeHtml(r.clientName)}</strong> (${escapeHtml(r.clientDoc)})</div>
+      <div style="margin-top:4px;">📦 Detalle: <strong>${escapeHtml(r.productName)}</strong></div>
+      <div style="margin-top:6px; color:var(--red); font-weight: bold;">
+        Reembolsado: -$${r.refundUSD.toFixed(2)} (Bs ${r.refundBs ? r.refundBs.toFixed(2) : "0.00"})
+      </div>
+    </div>
+  `).join("");
+}
+
+/* =========================================================================
+   INICIALIZACIÓN AL CARGAR LA PÁGINA
+   ========================================================================= */
+window.addEventListener("DOMContentLoaded", () => {
+  renderStockTable();
+  renderCart();
+  renderDailySales();
+  renderDailyReturns();
+});
+</script>
+</body>
+</html>
