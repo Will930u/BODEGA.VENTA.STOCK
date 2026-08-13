@@ -1,0 +1,18 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "BODEGA",
+  "orientation": "any",
+  "scope": "https://will930u.github.io/BODEGA.VENTA.STOCK/",
+  "short_name": "BODEGA",
+  "start_url": "https://will930u.github.io/BODEGA.VENTA.STOCK/",
+  "theme_color": "#ffffff",
+  "id": "will930u.github.io",
+  "description": "Aplicación para gestionar las bodegas y abastos desde un dispositivo con integración para telegram",
+  "lang": "es",
+  "categories": [
+    "business",
+    "productivity"
+  ]
+}
